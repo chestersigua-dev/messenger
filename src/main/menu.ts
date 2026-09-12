@@ -1,0 +1,160 @@
+import { Menu, BrowserWindow, app, MenuItemConstructorOptions } from 'electron';
+import { getSettings, saveSettings, onSettingsChange } from './settings';
+import { THEME_LIST, applyTheme } from './themes';
+import { isNotificationsMuted, setNotificationsMuted } from './notifications';
+
+let updateMenuFn: (() => void) | null = null;
+
+export function refreshAppMenu(): void {
+  if (updateMenuFn) {
+    updateMenuFn();
+  }
+}
+
+export function setupApplicationMenu(mainWindow: BrowserWindow): void {
+  const buildMenu = () => {
+    const settings = getSettings();
+    const currentTheme = settings.theme;
+
+    const darkThemeItems: MenuItemConstructorOptions[] = THEME_LIST
+      .filter((t) => t.category === 'dark')
+      .map((t) => ({
+        label: t.name,
+        type: 'radio' as const,
+        checked: currentTheme === t.id,
+        click: () => {
+          saveSettings({ theme: t.id });
+          applyTheme(mainWindow, t.id);
+        }
+      }));
+
+    const lightThemeItems: MenuItemConstructorOptions[] = THEME_LIST
+      .filter((t) => t.category === 'light')
+      .map((t) => ({
+        label: t.name,
+        type: 'radio' as const,
+        checked: currentTheme === t.id,
+        click: () => {
+          saveSettings({ theme: t.id });
+          applyTheme(mainWindow, t.id);
+        }
+      }));
+
+    const template: MenuItemConstructorOptions[] = [
+      {
+        label: '&File',
+        submenu: [
+          {
+            label: 'Preferences...',
+            accelerator: 'CmdOrControl+,',
+            click: () => {
+              if (mainWindow.isMinimized()) mainWindow.restore();
+              mainWindow.show();
+              mainWindow.focus();
+              mainWindow.webContents.send('open-preferences');
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Mute Notifications',
+            type: 'checkbox',
+            checked: isNotificationsMuted(),
+            accelerator: 'CmdOrControl+Shift+N',
+            click: (item) => {
+              setNotificationsMuted(item.checked);
+              saveSettings({ muteNotifications: item.checked });
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Clear Cache && Reload',
+            click: async () => {
+              await mainWindow.webContents.session.clearCache();
+              mainWindow.reload();
+            }
+          },
+          {
+            label: 'E&xit',
+            accelerator: 'Alt+F4',
+            click: () => {
+              app.quit();
+            }
+          }
+        ]
+      },
+      {
+        label: '&Edit',
+        submenu: [
+          { role: 'undo' },
+          { role: 'redo' },
+          { type: 'separator' },
+          { role: 'cut' },
+          { role: 'copy' },
+          { role: 'paste' },
+          { role: 'selectAll' }
+        ]
+      },
+      {
+        label: '&View',
+        submenu: [
+          {
+            label: '&Themes',
+            submenu: [
+              { label: 'Dark Themes', enabled: false },
+              ...darkThemeItems,
+              { type: 'separator' },
+              { label: 'Light Themes', enabled: false },
+              ...lightThemeItems
+            ]
+          },
+          { type: 'separator' },
+          { role: 'reload' },
+          { role: 'forceReload' },
+          { role: 'toggleDevTools' },
+          { type: 'separator' },
+          { role: 'resetZoom' },
+          { role: 'zoomIn' },
+          { role: 'zoomOut' },
+          { type: 'separator' },
+          { role: 'togglefullscreen' }
+        ]
+      },
+      {
+        label: '&Window',
+        submenu: [
+          {
+            label: 'Always on Top',
+            type: 'checkbox',
+            checked: settings.alwaysOnTop,
+            accelerator: 'CmdOrControl+Shift+A',
+            click: (item) => {
+              saveSettings({ alwaysOnTop: item.checked });
+              mainWindow.setAlwaysOnTop(item.checked);
+            }
+          },
+          {
+            label: 'Minimize to Tray',
+            type: 'checkbox',
+            checked: settings.minimizeToTray,
+            click: (item) => {
+              saveSettings({ minimizeToTray: item.checked });
+            }
+          },
+          { type: 'separator' },
+          { role: 'minimize' },
+          { role: 'close' }
+        ]
+      }
+    ];
+
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+  };
+
+  updateMenuFn = buildMenu;
+  buildMenu();
+
+  onSettingsChange(() => {
+    buildMenu();
+  });
+}

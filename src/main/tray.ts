@@ -1,9 +1,12 @@
-import { Tray, Menu, BrowserWindow, app, nativeImage } from 'electron';
+import { Tray, Menu, BrowserWindow, app, nativeImage, MenuItemConstructorOptions } from 'electron';
 import path from 'path';
 import { isNotificationsMuted, setNotificationsMuted } from './notifications';
+import { getSettings, saveSettings, onSettingsChange } from './settings';
+import { THEME_LIST, applyTheme } from './themes';
 
 let tray: Tray | null = null;
 let isQuitting = false;
+let updateMenuFn: (() => void) | null = null;
 
 export function getIsQuitting(): boolean {
   return isQuitting;
@@ -11,6 +14,12 @@ export function getIsQuitting(): boolean {
 
 export function setIsQuitting(val: boolean): void {
   isQuitting = val;
+}
+
+export function refreshTrayMenu(): void {
+  if (updateMenuFn) {
+    updateMenuFn();
+  }
 }
 
 /**
@@ -29,21 +38,90 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
       if (mainWindow.isFocused()) {
         mainWindow.hide();
       } else {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.show();
         mainWindow.focus();
       }
     } else {
+      if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.show();
       mainWindow.focus();
     }
   });
 
   const updateContextMenu = () => {
+    const settings = getSettings();
+    const currentTheme = settings.theme;
+
+    const darkThemes: MenuItemConstructorOptions[] = THEME_LIST
+      .filter((t) => t.category === 'dark')
+      .map((t) => ({
+        label: t.name,
+        type: 'radio' as const,
+        checked: currentTheme === t.id,
+        click: () => {
+          saveSettings({ theme: t.id });
+          applyTheme(mainWindow, t.id);
+        }
+      }));
+
+    const lightThemes: MenuItemConstructorOptions[] = THEME_LIST
+      .filter((t) => t.category === 'light')
+      .map((t) => ({
+        label: t.name,
+        type: 'radio' as const,
+        checked: currentTheme === t.id,
+        click: () => {
+          saveSettings({ theme: t.id });
+          applyTheme(mainWindow, t.id);
+        }
+      }));
+
     const contextMenu = Menu.buildFromTemplate([
       {
         label: 'Open Messenger',
         click: () => {
+          if (mainWindow.isMinimized()) mainWindow.restore();
           mainWindow.show();
           mainWindow.focus();
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Always on Top',
+        type: 'checkbox',
+        checked: settings.alwaysOnTop,
+        click: (item) => {
+          saveSettings({ alwaysOnTop: item.checked });
+          mainWindow.setAlwaysOnTop(item.checked);
+        }
+      },
+      {
+        label: 'Minimize to Tray',
+        type: 'checkbox',
+        checked: settings.minimizeToTray,
+        click: (item) => {
+          saveSettings({ minimizeToTray: item.checked });
+        }
+      },
+      {
+        label: 'Themes',
+        submenu: [
+          { label: 'Dark Themes', enabled: false },
+          ...darkThemes,
+          { type: 'separator' },
+          { label: 'Light Themes', enabled: false },
+          ...lightThemes
+        ]
+      },
+      {
+        label: 'Preferences / Theme Settings...',
+        accelerator: 'CmdOrCtrl+,',
+        click: () => {
+          if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.show();
+          mainWindow.focus();
+          mainWindow.webContents.send('open-preferences');
         }
       },
       { type: 'separator' },
@@ -53,6 +131,7 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
         checked: isNotificationsMuted(),
         click: (item) => {
           setNotificationsMuted(item.checked);
+          saveSettings({ muteNotifications: item.checked });
         }
       },
       {
@@ -81,9 +160,15 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
     tray?.setContextMenu(contextMenu);
   };
 
+  updateMenuFn = updateContextMenu;
   updateContextMenu();
 
-  // Intercept window close event to minimize to tray instead
+  // Listen to external settings changes
+  onSettingsChange(() => {
+    updateContextMenu();
+  });
+
+  // Intercept window close event to hide to tray
   mainWindow.on('close', (event) => {
     if (!isQuitting) {
       event.preventDefault();
@@ -93,7 +178,7 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
       if (process.platform === 'win32' && tray) {
         tray.displayBalloon?.({
           title: 'Messenger is still running',
-          content: 'Messenger is minimized to the system tray to keep delivering calls and messages.'
+          content: 'Messenger is running in the system tray to keep delivering calls and messages.'
         });
       }
     }

@@ -22,20 +22,31 @@ A high-performance, open-source Windows 10/11 desktop client wrapper for **Messe
   - Taskbar flashing (`mainWindow.flashFrame(true)`) when new messages arrive.
   - Clicking notifications immediately restores, unminimizes, and focuses the target conversation.
 
+- **6 Custom Themes (3 Dark & 3 Light)**:
+  - **Dark Themes**:
+    - **Midnight Navy**: Deep slate navy (`#18191a`) with signature Messenger electric blue.
+    - **OLED Pitch Black**: Pure pitch black (`#000000`) with high-contrast cyan for OLED and battery efficiency.
+    - **Cyberpunk Neon**: Futuristic violet twilight with neon magenta and purple accents.
+  - **Light Themes**:
+    - **Clean Classic**: Crisp snow white (`#ffffff`) with cool gray wash and electric blue.
+    - **Warm Sepia / Cozy Paper**: Gentle warm parchment tones (`#faf5eb`), relaxing and easy on the eyes.
+    - **Nordic Frost**: Crisp arctic ice white (`#f0f7f7`) with cool emerald teal accents.
+  - Switch themes on the fly via System Tray, Application Menu (`Alt`), in-app Preferences (`Ctrl+,`), or quick cycling shortcut (`Ctrl+Shift+T`).
+
+- **Window Controls & Always on Top**:
+  - **Always on Top**: Pin the Messenger window above all other desktop applications (`Ctrl+Shift+A`, Tray menu, or Preferences modal).
+  - **Minimize to Tray**: Send the window directly to the Windows system tray on minimize and close, preserving background call connectivity and notifications.
+
+- **Interactive In-App Preferences**:
+  - Open via `Ctrl+,`, tray context menu, or the floating palette button.
+  - Visual theme selector cards with color preview swatches and live instant switching.
+  - Toggles for Always on Top, Minimize to Tray, and Mute Notifications.
+
 - **System Tray & Background Management**:
-  - Minimize-to-tray behavior preserves background notifications and ongoing call connectivity on window close.
+  - Minimize-to-tray behavior preserves background notifications and ongoing call connectivity.
   - Responsive tray icon with real-time unread indicators.
-  - Context menu with options: Open Messenger, Mute Notifications, Reload, Clear Cache, and Quit.
-  - Global hotkeys (`Ctrl+Shift+M` to toggle visibility, `Ctrl+Shift+N` to toggle mute).
-
-- **Modern Windows Design & Theme Sync**:
-  - Automatic synchronization with Windows Light/Dark theme preference (`nativeTheme.shouldUseDarkColors`).
-  - Custom Windows Fluent scrollbars and hardware-accelerated GPU rendering.
-
-- **Packaging & CI/CD**:
-  - Automated NSIS setup installer (`Messenger-Setup-1.0.0-x64.exe`) with custom installation directory support and desktop/Start menu shortcuts.
-  - Portable standalone executable (`Messenger-Portable-1.0.0-x64.exe`).
-  - Ready-to-use GitHub Actions workflow (`.github/workflows/release.yml`) for tag-based automated builds and release asset publishing with SHA256 checksums.
+  - Context menu with: Open Messenger, Always on Top, Minimize to Tray, Themes (Dark/Light), Preferences, Mute Notifications, Reload, Clear Cache, and Quit.
+  - Global hotkeys (`Ctrl+Shift+M` to toggle visibility, `Ctrl+Shift+N` to toggle mute, `Ctrl+Shift+A` for Always on Top, `Ctrl+Shift+T` to cycle themes).
 
 ---
 
@@ -59,11 +70,14 @@ messenger/
 │   │   ├── badge.ts             # Windows taskbar unread counter overlay
 │   │   ├── main.ts              # Electron main process entry & lifecycle
 │   │   ├── media.ts             # WebRTC device permissions & screen sharing
+│   │   ├── menu.ts              # Windows application menu (Themes, Always on Top)
 │   │   ├── notifications.ts     # Native Windows notifications & AppUserModelId
+│   │   ├── settings.ts          # Persistent settings storage & change subscriptions
 │   │   ├── shortcuts.ts         # Global hotkeys & keyboard accelerators
-│   │   └── tray.ts              # System tray integration & minimize-to-tray
+│   │   ├── themes.ts            # 6 themes definition & live CSS injection engine
+│   │   └── tray.ts              # System tray integration & theme/window controls
 │   ├── preload/
-│   │   └── preload.ts           # HTML5 Notification hook, DOM/title observer, IPC bridge
+│   │   └── preload.ts           # HTML5 Notification hook, in-app Preferences UI, IPC bridge
 │   └── types/
 │       └── index.ts             # TypeScript interfaces and IPC channel contracts
 ├── electron-builder.yml         # NSIS & portable packaging configuration
