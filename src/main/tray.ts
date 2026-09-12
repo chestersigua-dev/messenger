@@ -116,7 +116,7 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
       },
       {
         label: 'Preferences / Theme Settings...',
-        accelerator: 'CmdOrCtrl+,',
+        accelerator: 'CmdOrCtrl+~',
         click: () => {
           if (mainWindow.isMinimized()) mainWindow.restore();
           mainWindow.show();

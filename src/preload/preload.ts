@@ -603,7 +603,7 @@ function renderPreferencesContent(settings: AppSettings, themes: ThemeDefinition
             </div>
             <div class="shortcut-pill" style="grid-column: span 2;">
               <span>Preferences & Themes</span>
-              <span class="shortcut-keys">Ctrl+,</span>
+              <span class="shortcut-keys">Ctrl+~</span>
             </div>
           </div>
         </div>
@@ -661,7 +661,7 @@ function renderPreferencesContent(settings: AppSettings, themes: ThemeDefinition
 function injectFloatingLauncher(): void {
   const launcher = document.createElement('button');
   launcher.id = 'messenger-desktop-quick-theme-btn';
-  launcher.title = 'Themes & Preferences (Ctrl+,)';
+  launcher.title = 'Themes & Preferences (Ctrl+~)';
   launcher.innerHTML = `🎨`;
   launcher.setAttribute(
     'style',
@@ -711,9 +711,13 @@ function injectFloatingLauncher(): void {
   }
 }
 
-// Global keyboard shortcut listener (Ctrl+, and Escape)
+// Global keyboard shortcut listener (Ctrl+~ and Escape)
 window.addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key === ',') {
+  if (
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    (event.key === '~' || event.key === '`' || event.code === 'Backquote')
+  ) {
     event.preventDefault();
     if (isModalOpen) {
       closePreferencesModal();

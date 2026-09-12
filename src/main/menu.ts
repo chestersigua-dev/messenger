@@ -46,7 +46,7 @@ export function setupApplicationMenu(mainWindow: BrowserWindow): void {
         submenu: [
           {
             label: 'Preferences...',
-            accelerator: 'CmdOrControl+,',
+            accelerator: 'CmdOrControl+~',
             click: () => {
               if (mainWindow.isMinimized()) mainWindow.restore();
               mainWindow.show();
