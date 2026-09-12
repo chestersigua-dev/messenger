@@ -1,0 +1,54 @@
+appId: com.messenger.desktop
+productName: Messenger
+copyright: Copyright © 2026 Messenger Desktop Contributors
+
+directories:
+  output: release
+  buildResources: assets
+
+files:
+  - dist/**/*
+  - assets/**/*
+  - package.json
+
+asar: true
+asarUnpack:
+  - assets/**/*
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: assets/icon.ico
+  legalTrademarks: Messenger is a trademark of Meta Platforms, Inc.
+  publisherName: Messenger Desktop Contributors
+  verifyUpdateCodeSignature: false
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  installerHeaderIcon: assets/icon.ico
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Messenger
+  uninstallDisplayName: Messenger
+  runAfterFinish: true
+  artifactName: ${productName}-Setup-${version}-${arch}.${ext}
+  deleteAppDataOnUninstall: false
+
+portable:
+  artifactName: ${productName}-Portable-${version}-${arch}.${ext}
+
+protocols:
+  - name: Messenger URL Protocol
+    schemes:
+      - messenger
+      - fb-messenger

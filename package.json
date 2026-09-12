@@ -1,0 +1,32 @@
+{
+  "name": "messenger-desktop",
+  "version": "1.0.0",
+  "description": "High-performance, open-source Windows desktop wrapper for Messenger",
+  "main": "dist/main/main.js",
+  "author": "Messenger Desktop Contributors",
+  "license": "MIT",
+  "homepage": "https://github.com/chestersigua-dev/messenger",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chestersigua-dev/messenger.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "build:icon": "node scripts/generate-icons.js",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder --win",
+    "dist:nsis": "npm run build && electron-builder --win nsis",
+    "dist:portable": "npm run build && electron-builder --win portable"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "png-to-ico": "^2.1.8",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.1",
+    "vite-plugin-electron": "^0.29.0"
+  }
+}
