@@ -1,4 +1,4 @@
-import { BrowserWindow, shell, HandlerDetails, WindowOpenHandlerResponse, WebContents } from 'electron';
+import { BrowserWindow, shell, HandlerDetails, WindowOpenHandlerResponse } from 'electron';
 
 // List of allowed domains that should remain inside the Electron app
 const ALLOWED_DOMAINS = [

@@ -25,7 +25,6 @@ win:
         - x64
   icon: assets/icon.ico
   legalTrademarks: Messenger is a trademark of Meta Platforms, Inc.
-  publisherName: Messenger Desktop Contributors
   verifyUpdateCodeSignature: false
 
 nsis:

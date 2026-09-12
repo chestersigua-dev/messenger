@@ -53,8 +53,6 @@ function checkAndUpdateUnreadCount(): void {
  * Hooks into the HTML5 Notification API to dispatch native Windows desktop notifications.
  */
 function hookHtml5Notifications(): void {
-  const OriginalNotification = window.Notification;
-
   // Notification proxy class
   class CustomNotification extends EventTarget {
     static get permission(): NotificationPermission {

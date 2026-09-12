@@ -45,7 +45,7 @@ export function setupMediaAndPermissions(customSession: Session): void {
   });
 
   // 2. Synchronous permission check handler
-  customSession.setPermissionCheckHandler((webContents, permission, requestingOrigin) => {
+  customSession.setPermissionCheckHandler((_webContents, permission, requestingOrigin) => {
     try {
       const parsed = new URL(requestingOrigin);
       const isInternalDomain =
@@ -77,10 +77,5 @@ export function setupMediaAndPermissions(customSession: Session): void {
       console.error('Error handling display media request:', err);
       callback({});
     }
-  });
-
-  // 4. Ensure WebRTC audio output selection is enabled
-  customSession.setBluetoothPairingHandler?.((_details, callback) => {
-    callback({ response: 'cancel' });
   });
 }
