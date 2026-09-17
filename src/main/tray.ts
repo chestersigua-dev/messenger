@@ -86,6 +86,26 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
           mainWindow.focus();
         }
       },
+      {
+        label: '• Personal Messenger',
+        click: () => {
+          if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.show();
+          mainWindow.focus();
+          const { switchTab } = require('./main');
+          switchTab('personal');
+        }
+      },
+      {
+        label: `• ${settings.pageInboxName || 'Page Inbox'}`,
+        click: () => {
+          if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.show();
+          mainWindow.focus();
+          const { switchTab } = require('./main');
+          switchTab('page');
+        }
+      },
       { type: 'separator' },
       {
         label: 'Always on Top',
@@ -105,6 +125,16 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
         }
       },
       {
+        label: 'Mute Page Notifications',
+        type: 'checkbox',
+        checked: settings.mutePageNotifications,
+        click: (item) => {
+          const { setPageNotificationsMuted } = require('./notifications');
+          setPageNotificationsMuted(item.checked);
+          saveSettings({ mutePageNotifications: item.checked });
+        }
+      },
+      {
         label: 'Themes',
         submenu: [
           { label: 'Dark Themes', enabled: false },
@@ -116,7 +146,6 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
       },
       {
         label: 'Preferences / Theme Settings...',
-        accelerator: 'CmdOrCtrl+~',
         click: () => {
           if (mainWindow.isMinimized()) mainWindow.restore();
           mainWindow.show();
@@ -135,16 +164,11 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
         }
       },
       {
-        label: 'Reload Messenger',
-        click: () => {
-          mainWindow.reload();
-        }
-      },
-      {
         label: 'Clear Cache & Reload',
         click: async () => {
           await mainWindow.webContents.session.clearCache();
-          mainWindow.reload();
+          const { reloadActiveTab } = require('./main');
+          reloadActiveTab();
         }
       },
       { type: 'separator' },
@@ -187,11 +211,15 @@ export function setupSystemTray(mainWindow: BrowserWindow): Tray {
   return tray;
 }
 
-export function updateTrayToolTip(unreadCount: number): void {
+export function updateTrayToolTip(unreadCount: number, details?: string): void {
   if (!tray) return;
 
   if (unreadCount > 0) {
-    tray.setToolTip(`Messenger (${unreadCount} unread)`);
+    if (details) {
+      tray.setToolTip(`Messenger (${unreadCount} unread - ${details})`);
+    } else {
+      tray.setToolTip(`Messenger (${unreadCount} unread)`);
+    }
   } else {
     tray.setToolTip('Messenger');
   }

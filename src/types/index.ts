@@ -1,5 +1,8 @@
+export type AccountType = 'personal' | 'page';
+
 export interface UnreadCountPayload {
   count: number;
+  account?: AccountType;
 }
 
 export interface NotificationPayload {
@@ -8,6 +11,7 @@ export interface NotificationPayload {
   body: string;
   icon?: string;
   tag?: string;
+  account?: AccountType;
   data?: {
     threadId?: string;
     url?: string;
@@ -50,11 +54,18 @@ export interface AppSettings {
   autoLaunch: boolean;
   theme: ThemeId;
   hardwareAcceleration: boolean;
+  fontSize: number;
+  enablePageInbox: boolean;
+  pageInboxUrl: string;
+  pageInboxName: string;
+  mutePageNotifications: boolean;
+  includePageInTaskbarBadge: boolean;
+  askPageOnLogin?: boolean;
 }
 
 export interface MessengerDesktopAPI {
   sendNotification: (payload: NotificationPayload) => void;
-  updateUnreadCount: (count: number) => void;
+  updateUnreadCount: (count: number, account?: AccountType) => void;
   onThemeChanged: (callback: (isDark: boolean) => void) => () => void;
   onNotificationClicked: (callback: (payload: { id?: string; data?: unknown }) => void) => () => void;
   openExternalUrl: (url: string) => void;
@@ -65,6 +76,9 @@ export interface MessengerDesktopAPI {
   onSettingsChanged: (callback: (settings: AppSettings) => void) => () => void;
   getThemes: () => Promise<ThemeDefinition[]>;
   openPreferences: () => void;
+  openPageChooser?: () => void;
+  switchTab?: (tab: AccountType) => void;
+  resetPageSession?: () => Promise<boolean>;
 }
 
 declare global {

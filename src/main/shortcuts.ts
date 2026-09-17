@@ -51,6 +51,13 @@ export function setupShortcuts(mainWindow: BrowserWindow): void {
     applyTheme(mainWindow, nextTheme.id);
   });
 
+  // Global shortcut to switch managed Facebook Page (Ctrl+Shift+P)
+  globalShortcut.register('CommandOrControl+Shift+P', () => {
+    if (mainWindow.isDestroyed()) return;
+    const { triggerPageChooser } = require('./main');
+    triggerPageChooser();
+  });
+
   // Cleanup shortcuts when app is quitting
   app.on('will-quit', () => {
     globalShortcut.unregisterAll();

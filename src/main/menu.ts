@@ -46,7 +46,6 @@ export function setupApplicationMenu(mainWindow: BrowserWindow): void {
         submenu: [
           {
             label: 'Preferences...',
-            accelerator: 'CmdOrControl+~',
             click: () => {
               if (mainWindow.isMinimized()) mainWindow.restore();
               mainWindow.show();
@@ -95,6 +94,58 @@ export function setupApplicationMenu(mainWindow: BrowserWindow): void {
         ]
       },
       {
+        label: '&Tabs',
+        submenu: [
+          {
+            label: 'Personal Messenger',
+            accelerator: 'CmdOrControl+1',
+            click: () => {
+              const { switchTab } = require('./main');
+              switchTab('personal');
+            }
+          },
+          {
+            label: settings.pageInboxName || 'Page Inbox',
+            accelerator: 'CmdOrControl+2',
+            click: () => {
+              const { switchTab } = require('./main');
+              switchTab('page');
+            }
+          },
+          {
+            label: 'Switch Managed Page...',
+            accelerator: 'CmdOrControl+Shift+P',
+            click: () => {
+              const { triggerPageChooser } = require('./main');
+              triggerPageChooser();
+            }
+          },
+          { type: 'separator' },
+          {
+            label: 'Enable Page Chat Tab',
+            type: 'checkbox',
+            checked: settings.enablePageInbox !== false,
+            click: (item) => {
+              saveSettings({ enablePageInbox: item.checked });
+            }
+          },
+          {
+            label: 'Pop out Page into Separate Window',
+            click: () => {
+              const { popoutPageWindow } = require('./main');
+              popoutPageWindow();
+            }
+          },
+          {
+            label: 'Reset Page Session / Log Out...',
+            click: async () => {
+              const { resetPageSession } = require('./main');
+              await resetPageSession();
+            }
+          }
+        ]
+      },
+      {
         label: '&View',
         submenu: [
           {
@@ -112,9 +163,37 @@ export function setupApplicationMenu(mainWindow: BrowserWindow): void {
           { role: 'forceReload' },
           { role: 'toggleDevTools' },
           { type: 'separator' },
-          { role: 'resetZoom' },
-          { role: 'zoomIn' },
-          { role: 'zoomOut' },
+          {
+            label: 'Zoom In',
+            accelerator: 'CmdOrControl+=',
+            click: () => {
+              const s = getSettings();
+              const next = Math.min(160, (s.fontSize || 100) + 10);
+              saveSettings({ fontSize: next });
+              mainWindow.webContents.setZoomFactor(next / 100);
+              mainWindow.webContents.send('settings-changed', getSettings());
+            }
+          },
+          {
+            label: 'Zoom Out',
+            accelerator: 'CmdOrControl+-',
+            click: () => {
+              const s = getSettings();
+              const next = Math.max(70, (s.fontSize || 100) - 10);
+              saveSettings({ fontSize: next });
+              mainWindow.webContents.setZoomFactor(next / 100);
+              mainWindow.webContents.send('settings-changed', getSettings());
+            }
+          },
+          {
+            label: 'Reset Zoom',
+            accelerator: 'CmdOrControl+0',
+            click: () => {
+              saveSettings({ fontSize: 100 });
+              mainWindow.webContents.setZoomFactor(1.0);
+              mainWindow.webContents.send('settings-changed', getSettings());
+            }
+          },
           { type: 'separator' },
           { role: 'togglefullscreen' }
         ]

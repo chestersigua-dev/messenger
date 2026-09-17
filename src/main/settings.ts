@@ -15,7 +15,14 @@ function getDefaultSettings(): AppSettings {
     startMinimized: false,
     autoLaunch: false,
     theme: isDark ? 'dark-midnight' : 'light-clean',
-    hardwareAcceleration: true
+    hardwareAcceleration: true,
+    fontSize: 100,
+    enablePageInbox: true,
+    pageInboxUrl: 'https://business.facebook.com/latest/inbox',
+    pageInboxName: 'Page Inbox',
+    mutePageNotifications: false,
+    includePageInTaskbarBadge: true,
+    askPageOnLogin: true
   };
 }
 
@@ -36,6 +43,11 @@ export function loadSettings(): AppSettings {
       const data = fs.readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(data);
       currentSettings = { ...defaults, ...parsed };
+      // Migrate older specific messenger inbox URL to universal inbox URL if unchanged
+      if (currentSettings && currentSettings.pageInboxUrl === 'https://business.facebook.com/latest/inbox/messenger') {
+        currentSettings.pageInboxUrl = 'https://business.facebook.com/latest/inbox';
+        saveSettings(currentSettings);
+      }
       return currentSettings as AppSettings;
     }
   } catch (err) {

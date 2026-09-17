@@ -30,6 +30,8 @@ export function setupMediaAndPermissions(customSession: Session): void {
       const isInternalDomain =
         parsed.hostname.endsWith('messenger.com') ||
         parsed.hostname.endsWith('facebook.com') ||
+        parsed.hostname.endsWith('meta.com') ||
+        parsed.hostname.endsWith('instagram.com') ||
         parsed.hostname.endsWith('fbcdn.net');
 
       if (isInternalDomain && GRANTED_PERMISSIONS.has(permission)) {
@@ -51,6 +53,8 @@ export function setupMediaAndPermissions(customSession: Session): void {
       const isInternalDomain =
         parsed.hostname.endsWith('messenger.com') ||
         parsed.hostname.endsWith('facebook.com') ||
+        parsed.hostname.endsWith('meta.com') ||
+        parsed.hostname.endsWith('instagram.com') ||
         parsed.hostname.endsWith('fbcdn.net');
 
       return isInternalDomain && GRANTED_PERMISSIONS.has(permission);

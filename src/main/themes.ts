@@ -91,7 +91,7 @@ export function generateThemeCss(theme: ThemeDefinition): string {
 
   const cardSecondary = isDark
     ? adjustBrightness(card, 15)
-    : adjustBrightness(card, -5);
+    : adjustBrightness(card, -8);
   const textSecondary = isDark
     ? '#a8b3cf'
     : '#65676b';
@@ -113,8 +113,13 @@ export function generateThemeCss(theme: ThemeDefinition): string {
     /* ====================================================================
        Messenger Desktop Custom Theme: ${theme.name} (${theme.id})
        ==================================================================== */
+    :root, html {
+      color-scheme: ${isDark ? 'dark' : 'light'} !important;
+    }
+
     :root, html, body, .__fb-light-mode, .__fb-dark-mode {
       --web-wash: ${bg} !important;
+      --wash: ${bg} !important;
       --surface-background: ${card} !important;
       --secondary-surface-background: ${cardSecondary} !important;
       --hover-overlay: ${hoverOverlay} !important;
@@ -124,16 +129,23 @@ export function generateThemeCss(theme: ThemeDefinition): string {
       --primary-icon: ${accent} !important;
       --secondary-icon: ${textSecondary} !important;
       --divider: ${border} !important;
-      --wash: ${bg} !important;
       --card-background: ${card} !important;
       --card-background-flat: ${card} !important;
-      --messenger-card-background: ${card} !important;
+      --messenger-card-background: ${cardSecondary} !important;
       --comment-background: ${cardSecondary} !important;
       --popover-background: ${card} !important;
       --nav-bar-background: ${bg} !important;
       --search-background: ${cardSecondary} !important;
       --always-dark-overlay: rgba(0, 0, 0, 0.4) !important;
       --accent-color: ${accent} !important;
+      --incoming-message-background: ${cardSecondary} !important;
+      --outgoing-message-background: ${accent} !important;
+      --chat-bubble-background: ${cardSecondary} !important;
+      --chat-incoming-bubble-background: ${cardSecondary} !important;
+      --chat-outgoing-bubble-background: ${accent} !important;
+      --chat-replied-message-background: ${cardSecondary} !important;
+      --disabled-button-background: ${cardSecondary} !important;
+      --placeholder-text: ${textSecondary} !important;
     }
 
     body, html {
@@ -192,6 +204,38 @@ export function generateThemeCss(theme: ThemeDefinition): string {
     div[role="main"] div[role="region"] {
       background-color: ${bg} !important;
     }
+
+    /* Explicit Message Bubble Enhancements for Lighter & Custom Themes */
+    /* Target incoming bubble elements in chat rows */
+    div[role="main"] div[role="row"] div[dir="auto"],
+    div[role="main"] div[data-scope="messages_table"] div[dir="auto"] {
+      color: inherit;
+    }
+
+    /* Incoming message bubble background & text */
+    div[role="main"] div[role="row"]:not([style*="flex-direction: row-reverse"]) div[style*="border-radius: 18px"],
+    div[role="main"] div[role="row"]:not([style*="flex-direction: row-reverse"]) div[style*="border-radius: 20px"],
+    div[role="main"] div[role="row"] div[data-scope="messages_table"] div[style*="border-radius: 18px"],
+    div[role="main"] div[role="row"] div[data-scope="messages_table"] div[style*="border-radius: 20px"] {
+      background-color: ${cardSecondary} !important;
+      color: ${text} !important;
+    }
+
+    div[role="main"] div[role="row"]:not([style*="flex-direction: row-reverse"]) div[dir="auto"],
+    div[role="main"] div[role="gridcell"]:not([style*="flex-direction: row-reverse"]) div[dir="auto"] {
+      color: ${text} !important;
+    }
+
+    /* Outgoing bubble text readability */
+    div[role="main"] div[role="row"][style*="flex-direction: row-reverse"] div[dir="auto"] {
+      color: #ffffff !important;
+    }
+
+    /* Search & composer text readability */
+    div[role="combobox"],
+    input[type="text"] {
+      color: ${text} !important;
+    }
   `;
 }
 
@@ -219,44 +263,111 @@ function adjustBrightness(hex: string, percent: number): string {
   return `#${rr}${gg}${bb}`;
 }
 
-let lastInjectedKey: string | null = null;
+export interface ThemedViewTarget {
+  webContents: import('electron').WebContents;
+  type?: 'personal' | 'page' | 'tabbar' | 'shell';
+}
 
 /**
- * Applies the requested theme to the main window webContents and native window chrome.
+ * Applies the requested theme to the main window webContents, any child views, and native window chrome.
  */
-export async function applyTheme(mainWindow: BrowserWindow, themeId: ThemeId): Promise<void> {
+export async function applyTheme(
+  mainWindow: BrowserWindow,
+  themeId: ThemeId,
+  additionalViews?: Array<ThemedViewTarget | { webContents: import('electron').WebContents }>,
+  targetType?: 'personal' | 'page' | 'tabbar' | 'shell'
+): Promise<void> {
   if (mainWindow.isDestroyed()) return;
 
   const theme = getTheme(themeId);
   const isDark = theme.category === 'dark';
 
-  // Sync native theme source so webview recognizes dark/light base
+  // Strictly enforce nativeTheme source so Chromium and web contents ignore system theme
   nativeTheme.themeSource = isDark ? 'dark' : 'light';
 
   // Update window background
   mainWindow.setBackgroundColor(theme.previewColors.bg);
 
-  // Generate and inject theme CSS
-  const css = generateThemeCss(theme);
+  const rawViews = additionalViews ||
+    ((mainWindow.contentView as unknown as { children?: Array<{ webContents?: import('electron').WebContents }> })?.children || [])
+      .filter((v) => v && v.webContents)
+      .map((v) => ({ webContents: v.webContents! }));
 
-  try {
-    if (lastInjectedKey) {
-      await mainWindow.webContents.removeInsertedCSS(lastInjectedKey);
+  const targets = [
+    { webContents: mainWindow.webContents, type: 'shell' as const },
+    ...rawViews.map((v) => {
+      const typed = v as ThemedViewTarget;
+      return {
+        webContents: typed.webContents,
+        type: typed.type || targetType || detectViewType(typed.webContents)
+      };
+    })
+  ].filter((c) => c.webContents && !c.webContents.isDestroyed());
+
+  const messengerCss = generateThemeCss(theme);
+
+  for (const item of targets) {
+    const { webContents: contents, type } = item;
+
+    // Send IPC notifications to all views
+    try {
+      contents.send('theme-applied', theme);
+      contents.send('theme-changed', isDark);
+    } catch {
+      // Ignore IPC failure
     }
-  } catch {
-    // key might be invalid or invalidated on page reload
-  }
 
-  try {
-    lastInjectedKey = await mainWindow.webContents.insertCSS(css);
-  } catch (err) {
-    console.error('Failed to inject theme CSS:', err);
-  }
+    if (type === 'personal') {
+      // Inject full Messenger theme CSS and classes strictly for personal Messenger
+      try {
+        await contents.executeJavaScript(`
+          (function() {
+            const isDark = ${isDark};
+            document.documentElement.style.setProperty('color-scheme', isDark ? 'dark' : 'light', 'important');
+            if (isDark) {
+              document.documentElement.classList.remove('__fb-light-mode');
+              document.documentElement.classList.add('__fb-dark-mode');
+              if (document.body) {
+                document.body.classList.remove('__fb-light-mode');
+                document.body.classList.add('__fb-dark-mode');
+              }
+            } else {
+              document.documentElement.classList.remove('__fb-dark-mode');
+              document.documentElement.classList.add('__fb-light-mode');
+              if (document.body) {
+                document.body.classList.remove('__fb-dark-mode');
+                document.body.classList.add('__fb-light-mode');
+              }
+            }
+          })();
+        `);
+      } catch {}
 
-  // Notify renderer
-  mainWindow.webContents.send('theme-applied', {
-    themeId: theme.id,
-    theme
-  });
-  mainWindow.webContents.send('theme-changed', isDark);
+      try {
+        await contents.insertCSS(messengerCss);
+      } catch {}
+    } else if (type === 'page') {
+      // For Meta Business Suite / Facebook Page Inbox:
+      // ONLY set standard color-scheme property. NEVER inject Messenger layout CSS
+      // or manipulate __fb-dark-mode classes which break Meta's React layout/hydration!
+      try {
+        await contents.executeJavaScript(`
+          (function() {
+            document.documentElement.style.setProperty('color-scheme', ${isDark ? "'dark'" : "'light'"}, 'important');
+          })();
+        `);
+      } catch {}
+    }
+  }
 }
+
+function detectViewType(contents: import('electron').WebContents): 'personal' | 'page' | 'tabbar' | 'shell' {
+  try {
+    const url = contents.getURL() || '';
+    if (url.includes('messenger.com')) return 'personal';
+    if (url.includes('business.facebook.com') || url.includes('facebook.com')) return 'page';
+    if (url.includes('tabbar.html') || url.includes('tabbar')) return 'tabbar';
+  } catch {}
+  return 'personal';
+}
+

@@ -1,8 +1,10 @@
 import { Notification, BrowserWindow, ipcMain, app } from 'electron';
 import path from 'path';
-import { NotificationPayload } from '../types';
+import { NotificationPayload, AccountType } from '../types';
+import { getSettings } from './settings';
 
 let notificationsMuted = false;
+let pageNotificationsMuted = false;
 
 export function isNotificationsMuted(): boolean {
   return notificationsMuted;
@@ -12,28 +14,56 @@ export function setNotificationsMuted(muted: boolean): void {
   notificationsMuted = muted;
 }
 
+export function isPageNotificationsMuted(): boolean {
+  return pageNotificationsMuted;
+}
+
+export function setPageNotificationsMuted(muted: boolean): void {
+  pageNotificationsMuted = muted;
+}
+
+export interface NotificationHandlers {
+  onSelectTab?: (account: AccountType) => void;
+  onNavigateThread?: (account: AccountType, urlOrThreadId: string) => void;
+  sendToView?: (account: AccountType, channel: string, ...args: unknown[]) => void;
+}
+
 /**
  * Initializes notification IPC listeners and sets Windows AppUserModelId.
  */
-export function setupNotifications(mainWindow: BrowserWindow): void {
+export function setupNotifications(
+  mainWindow: BrowserWindow,
+  handlers?: NotificationHandlers
+): void {
   // Ensure Windows 10 / 11 associates notifications with the Messenger app ID
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.messenger.desktop');
   }
 
   ipcMain.on('show-notification', (_event, payload: NotificationPayload) => {
-    if (notificationsMuted) {
-      return;
+    const account: AccountType = payload.account || 'personal';
+
+    if (account === 'page') {
+      if (pageNotificationsMuted) return;
+    } else {
+      if (notificationsMuted) return;
     }
 
     if (!Notification.isSupported()) {
       return;
     }
 
+    const settings = getSettings();
     const iconPath = path.join(__dirname, '../../assets/icon.ico');
 
+    let displayTitle = payload.title || 'Messenger';
+    if (account === 'page') {
+      const pageLabel = settings.pageInboxName || 'Page Inbox';
+      displayTitle = payload.title ? `[${pageLabel}] ${payload.title}` : `[${pageLabel}] New Message`;
+    }
+
     const notification = new Notification({
-      title: payload.title || 'Messenger',
+      title: displayTitle,
       body: payload.body || 'You received a new message',
       icon: iconPath,
       silent: false
@@ -52,17 +82,37 @@ export function setupNotifications(mainWindow: BrowserWindow): void {
 
       mainWindow.focus();
 
-      // If notification contains thread metadata or target URL, notify renderer/preload
-      if (payload.data?.url) {
-        mainWindow.loadURL(payload.data.url as string);
-      } else if (payload.data?.threadId) {
-        mainWindow.loadURL(`https://www.messenger.com/t/${payload.data.threadId}`);
+      // Switch to the relevant tab
+      if (handlers?.onSelectTab) {
+        handlers.onSelectTab(account);
       }
 
-      mainWindow.webContents.send('notification-clicked', {
-        id: payload.id,
-        data: payload.data
-      });
+      // If notification contains thread metadata or target URL, navigate in target view
+      const targetUrl = payload.data?.url as string | undefined;
+      const threadId = payload.data?.threadId as string | undefined;
+
+      if (handlers?.onNavigateThread) {
+        if (targetUrl) {
+          handlers.onNavigateThread(account, targetUrl);
+        } else if (threadId) {
+          const url = account === 'page'
+            ? `https://business.facebook.com/latest/inbox/messenger?selected_item_id=${threadId}`
+            : `https://www.messenger.com/t/${threadId}`;
+          handlers.onNavigateThread(account, url);
+        }
+      }
+
+      if (handlers?.sendToView) {
+        handlers.sendToView(account, 'notification-clicked', {
+          id: payload.id,
+          data: payload.data
+        });
+      } else {
+        mainWindow.webContents.send('notification-clicked', {
+          id: payload.id,
+          data: payload.data
+        });
+      }
     });
 
     notification.show();

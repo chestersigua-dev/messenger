@@ -1,6 +1,6 @@
 {
   "name": "messenger-desktop",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "High-performance, open-source Windows desktop wrapper for Messenger",
   "main": "dist/main/main.js",
   "author": "Messenger Desktop Contributors",
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node -e \"const fs=require('fs'); fs.mkdirSync('dist/tabbar', {recursive:true}); fs.copyFileSync('assets/tabbar/tabbar.html', 'dist/tabbar/tabbar.html');\"",
     "build:icon": "node scripts/generate-icons.js",
     "pack": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder --win",

@@ -35,6 +35,19 @@ export default defineConfig({
             }
           }
         }
+      },
+      {
+        entry: 'src/preload/tabbar-preload.ts',
+        vite: {
+          build: {
+            outDir: 'dist/preload',
+            sourcemap: true,
+            minify: false,
+            rollupOptions: {
+              external: ['electron']
+            }
+          }
+        }
       }
     ])
   ],

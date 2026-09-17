@@ -16,6 +16,14 @@ A high-performance, open-source Windows 10/11 desktop client wrapper for **Messe
   - Background throttling disabled (`backgroundThrottling: false`) to ensure crystal-clear, uninterrupted call audio even when minimized.
   - Dedicated call popup handling and Picture-in-Picture (PiP) support.
 
+- **Facebook Page Login & Dual-Tab Chat**:
+  - Chat seamlessly as a Facebook Page you manage without logging out or disturbing your personal Messenger account.
+  - Modern dual-tab interface (`Personal` & `Page Inbox`) powered by Electron `WebContentsView` with instant switching (`Ctrl+1` and `Ctrl+2`).
+  - Isolated persistent session partition (`persist:messenger_page_session`) keeps Page credentials, cookies, and active profile completely separate from your personal profile.
+  - Supports Meta Business Suite Inbox (Messenger & Instagram), direct Facebook Page Messages, or a custom Page URL.
+  - Independent notifications with `[Page Inbox]` tagging, individual mute controls, separate tab badge counters, and aggregated Windows taskbar overlay.
+  - Option to pop out Page Chat into a separate standalone window.
+
 - **Dynamic Taskbar Badge & Notifications**:
   - Native Windows 10/11 Action Center notification integration using Windows AppUserModelID (`com.messenger.desktop`).
   - Real-time unread message badge count rendered dynamically on the Windows taskbar icon via `mainWindow.setOverlayIcon`.
@@ -31,16 +39,18 @@ A high-performance, open-source Windows 10/11 desktop client wrapper for **Messe
     - **Clean Classic**: Crisp snow white (`#ffffff`) with cool gray wash and electric blue.
     - **Warm Sepia / Cozy Paper**: Gentle warm parchment tones (`#faf5eb`), relaxing and easy on the eyes.
     - **Nordic Frost**: Crisp arctic ice white (`#f0f7f7`) with cool emerald teal accents.
-  - Switch themes on the fly via System Tray, Application Menu (`Alt`), in-app Preferences (`Ctrl+~`), or quick cycling shortcut (`Ctrl+Shift+T`).
+  - Switch themes on the fly via System Tray, Application Menu (`Alt`), in-app Settings button, or quick cycling shortcut (`Ctrl+Shift+T`).
 
 - **Window Controls & Always on Top**:
   - **Always on Top**: Pin the Messenger window above all other desktop applications (`Ctrl+Shift+A`, Tray menu, or Preferences modal).
   - **Minimize to Tray**: Send the window directly to the Windows system tray on minimize and close, preserving background call connectivity and notifications.
 
 - **Interactive In-App Preferences**:
-  - Open via `Ctrl+~`, tray context menu, or the floating palette button.
+  - Open via the native Settings button below the Archive tab, Application Menu (`File -> Preferences...`), or tray context menu.
   - Visual theme selector cards with color preview swatches and live instant switching.
+  - Text & font size scaling controls (`A-`, `A+`, reset, or `Ctrl++` / `Ctrl+-`).
   - Toggles for Always on Top, Minimize to Tray, and Mute Notifications.
+  - In-app About section with author attribution.
 
 - **System Tray & Background Management**:
   - Minimize-to-tray behavior preserves background notifications and ongoing call connectivity.

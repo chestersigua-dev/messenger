@@ -10,6 +10,11 @@ const ALLOWED_DOMAINS = [
   'web.facebook.com',
   'login.facebook.com',
   'auth.facebook.com',
+  'business.facebook.com',
+  'business.meta.com',
+  'instagram.com',
+  'www.instagram.com',
+  'cdninstagram.com',
   'fb.com',
   'fbcdn.net',
   'fbsbx.com',
@@ -81,24 +86,31 @@ export function isCallUrl(urlStr: string): boolean {
 }
 
 /**
- * Configures navigation safeguards and OAuth window interception for the main window.
+ * Configures navigation safeguards and OAuth window interception for a window or WebContentsView.
  */
 export function setupAuthAndNavigationHandlers(
-  mainWindow: BrowserWindow,
-  sessionPartition: string
+  target: BrowserWindow | { webContents: import('electron').WebContents },
+  sessionPartition: string,
+  parentWindow?: BrowserWindow
 ): void {
-  const contents = mainWindow.webContents;
+  const contents = target.webContents;
+  const modalParent = parentWindow || (target instanceof BrowserWindow ? target : undefined);
 
   // 1. Intercept new window requests (window.open / target="_blank")
   contents.setWindowOpenHandler((details: HandlerDetails): WindowOpenHandlerResponse => {
     const { url } = details;
+
+    // 0. Handle about:blank or empty urls safely without launching external browser
+    if (!url || url.startsWith('about:')) {
+      return { action: 'allow' };
+    }
 
     // Check if the target is an internal call window
     if (isCallUrl(url)) {
       return {
         action: 'allow',
         overrideBrowserWindowOptions: {
-          parent: mainWindow,
+          parent: modalParent,
           modal: false,
           autoHideMenuBar: true,
           webPreferences: {
@@ -114,18 +126,25 @@ export function setupAuthAndNavigationHandlers(
     // Check if the target is an OAuth dialog or Facebook login modal
     if (isAuthUrl(url)) {
       // Open a dedicated child auth modal to handle 2FA/OAuth cleanly
-      createOAuthChildModal(mainWindow, url, sessionPartition);
+      if (modalParent) {
+        createOAuthChildModal(modalParent, url, sessionPartition, contents);
+      } else {
+        contents.loadURL(url);
+      }
       return { action: 'deny' };
     }
 
-    // If internal Messenger or Facebook link that isn't auth/call
-    if (isAllowedInternalUrl(url)) {
-      // Navigate in main window
-      mainWindow.loadURL(url);
-      return { action: 'deny' };
-    }
+    // If it's directly a Messenger conversation navigation (e.g. /t/threadId)
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname.includes('messenger.com') && (parsed.pathname === '/' || parsed.pathname.startsWith('/t/'))) {
+        contents.loadURL(url);
+        return { action: 'deny' };
+      }
+    } catch {}
 
-    // External URLs clicked in chat messages: open in default system browser
+    // For all external links or Facebook profile/post links opened in a new tab:
+    // Open in default browser so the active chat view is never hijacked or destroyed!
     shell.openExternal(url).catch((err) => {
       console.error('Failed to open external URL:', url, err);
     });
@@ -161,7 +180,8 @@ export function setupAuthAndNavigationHandlers(
 function createOAuthChildModal(
   parentWindow: BrowserWindow,
   authUrl: string,
-  sessionPartition: string
+  sessionPartition: string,
+  targetContents?: import('electron').WebContents
 ): BrowserWindow {
   const authModal = new BrowserWindow({
     parent: parentWindow,
@@ -192,13 +212,20 @@ function createOAuthChildModal(
       const isMessengerHome =
         parsed.hostname.includes('messenger.com') &&
         (parsed.pathname === '/' || parsed.pathname.startsWith('/t/'));
+      const isBusinessHome =
+        parsed.hostname.includes('business.facebook.com') ||
+        (parsed.hostname.includes('facebook.com') && (parsed.pathname.includes('/inbox') || parsed.pathname.includes('/messages')));
 
-      // If redirect returns to Messenger, authentication was successful
-      if (isMessengerHome || url.includes('close.html')) {
+      // If redirect returns to Messenger or Business Suite, authentication was successful
+      if (isMessengerHome || isBusinessHome || url.includes('close.html')) {
         if (!authModal.isDestroyed()) {
           authModal.close();
         }
-        parentWindow.loadURL(url);
+        if (targetContents && !targetContents.isDestroyed()) {
+          targetContents.loadURL(url);
+        } else {
+          parentWindow.loadURL(url);
+        }
       }
     } catch (err) {
       console.error('Error parsing OAuth redirect:', err);
