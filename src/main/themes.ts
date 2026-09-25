@@ -309,7 +309,12 @@ export async function applyTheme(
   for (const item of targets) {
     const { webContents: contents, type } = item;
 
-    // Send IPC notifications to all views
+    // Do NOT apply any theme to the Page Inbox view altogether
+    if (type === 'page') {
+      continue;
+    }
+
+    // Send IPC notifications to personal views
     try {
       contents.send('theme-applied', theme);
       contents.send('theme-changed', isDark);
@@ -345,17 +350,6 @@ export async function applyTheme(
 
       try {
         await contents.insertCSS(messengerCss);
-      } catch {}
-    } else if (type === 'page') {
-      // For Meta Business Suite / Facebook Page Inbox:
-      // ONLY set standard color-scheme property. NEVER inject Messenger layout CSS
-      // or manipulate __fb-dark-mode classes which break Meta's React layout/hydration!
-      try {
-        await contents.executeJavaScript(`
-          (function() {
-            document.documentElement.style.setProperty('color-scheme', ${isDark ? "'dark'" : "'light'"}, 'important');
-          })();
-        `);
       } catch {}
     }
   }

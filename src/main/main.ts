@@ -11,6 +11,7 @@ import { setupApplicationMenu } from './menu';
 import { loadSettings, getSettings, saveSettings } from './settings';
 import { applyTheme, getTheme, THEME_LIST } from './themes';
 import { UnreadCountPayload, AppSettings, AccountType } from '../types';
+import { PAGE_INBOX_DECLUTTER_CSS } from '../shared/declutter';
 
 // Persistent partitions for storing cookies, session tokens, and cache
 const SESSION_PARTITION = 'persist:messenger_session';
@@ -188,6 +189,13 @@ export function popoutPageWindow(): void {
   });
 
   setupAuthAndNavigationHandlers(popoutPageWin, PAGE_SESSION_PARTITION);
+  popoutPageWin.webContents.on('dom-ready', () => {
+    if (!popoutPageWin || popoutPageWin.isDestroyed()) return;
+    const url = (popoutPageWin.webContents.getURL() || '').toLowerCase();
+    if (!url.includes('/login') && !url.includes('/checkpoint') && !url.includes('loginpage')) {
+      popoutPageWin.webContents.insertCSS(PAGE_INBOX_DECLUTTER_CSS).catch(() => {});
+    }
+  });
   popoutPageWin.loadURL(settings.pageInboxUrl || 'https://business.facebook.com/latest/inbox');
 
   popoutPageWin.on('closed', () => {
@@ -328,11 +336,9 @@ async function initApp(): Promise<void> {
         const newBg = newTheme.previewColors.bg;
         tabBarView?.setBackgroundColor(newBg);
         personalView?.setBackgroundColor(newBg);
-        pageView?.setBackgroundColor(newBg);
         const viewsToTheme = [
           tabBarView ? { webContents: tabBarView.webContents, type: 'tabbar' as const } : null,
-          personalView ? { webContents: personalView.webContents, type: 'personal' as const } : null,
-          pageView ? { webContents: pageView.webContents, type: 'page' as const } : null
+          personalView ? { webContents: personalView.webContents, type: 'personal' as const } : null
         ].filter((v): v is NonNullable<typeof v> => v !== null);
         await applyTheme(mainWindow, partial.theme, viewsToTheme);
       }
@@ -492,19 +498,30 @@ async function initApp(): Promise<void> {
   mainWindow.on('restore', updateViewBounds);
 
   // Apply theme and zoom when DOM is ready
-  const applyInitialThemeToView = (view: WebContentsView, type: 'personal' | 'page') => {
-    view.webContents.on('dom-ready', () => {
+  if (personalView) {
+    personalView.webContents.on('dom-ready', () => {
+      if (!personalView || personalView.webContents.isDestroyed()) return;
       const s = getSettings();
       const factor = Math.min(160, Math.max(70, s.fontSize || 100)) / 100;
-      view.webContents.setZoomFactor(factor);
+      personalView.webContents.setZoomFactor(factor);
       if (mainWindow) {
-        applyTheme(mainWindow, s.theme, [{ webContents: view.webContents, type }]);
+        applyTheme(mainWindow, s.theme, [{ webContents: personalView.webContents, type: 'personal' }]);
       }
     });
-  };
+  }
 
-  applyInitialThemeToView(personalView, 'personal');
-  applyInitialThemeToView(pageView, 'page');
+  if (pageView) {
+    pageView.webContents.on('dom-ready', () => {
+      if (!pageView || pageView.webContents.isDestroyed()) return;
+      const s = getSettings();
+      const factor = Math.min(160, Math.max(70, s.fontSize || 100)) / 100;
+      pageView.webContents.setZoomFactor(factor);
+      const url = (pageView.webContents.getURL() || '').toLowerCase();
+      if (!url.includes('/login') && !url.includes('/checkpoint') && !url.includes('loginpage')) {
+        pageView.webContents.insertCSS(PAGE_INBOX_DECLUTTER_CSS).catch(() => {});
+      }
+    });
+  }
 
   // Listen to Windows system theme updates
   nativeTheme.on('updated', () => {
@@ -515,8 +532,7 @@ async function initApp(): Promise<void> {
     mainWindow.setBackgroundColor(theme.previewColors.bg);
     const viewsToTheme = [
       tabBarView ? { webContents: tabBarView.webContents, type: 'tabbar' as const } : null,
-      personalView ? { webContents: personalView.webContents, type: 'personal' as const } : null,
-      pageView ? { webContents: pageView.webContents, type: 'page' as const } : null
+      personalView ? { webContents: personalView.webContents, type: 'personal' as const } : null
     ].filter((v): v is NonNullable<typeof v> => v !== null);
     applyTheme(mainWindow, s.theme, viewsToTheme);
   });
@@ -526,8 +542,7 @@ async function initApp(): Promise<void> {
 
   const initialViewsToTheme = [
     tabBarView ? { webContents: tabBarView.webContents, type: 'tabbar' as const } : null,
-    personalView ? { webContents: personalView.webContents, type: 'personal' as const } : null,
-    pageView ? { webContents: pageView.webContents, type: 'page' as const } : null
+    personalView ? { webContents: personalView.webContents, type: 'personal' as const } : null
   ].filter((v): v is NonNullable<typeof v> => v !== null);
   applyTheme(mainWindow, settings.theme, initialViewsToTheme);
 

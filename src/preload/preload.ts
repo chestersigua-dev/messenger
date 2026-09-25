@@ -1,9 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { NotificationPayload, MessengerDesktopAPI, AppSettings, ThemeDefinition, AccountType } from '../types';
+import { PAGE_INBOX_DECLUTTER_CSS } from '../shared/declutter';
 
 const isPageAccount =
   (typeof process !== 'undefined' && Array.isArray(process.argv) && process.argv.includes('--account-type=page')) ||
-  (typeof window !== 'undefined' && window.location && window.location.hostname.includes('business.facebook.com'));
+  (typeof window !== 'undefined' && window.location && (window.location.hostname.includes('business.facebook.com') || window.location.hostname.includes('facebook.com')));
 
 const currentAccount: AccountType = isPageAccount ? 'page' : 'personal';
 
@@ -201,6 +202,44 @@ function injectDesktopStyles(): void {
       document.head?.appendChild(styleEl);
     });
   }
+}
+
+/**
+ * Injects declutter CSS into the Meta Business Suite / Page Inbox view to strip away
+ * all extra chrome (global nav rail, top bar, promotional banners, right context panel, etc.)
+ * and leave only the conversation list + chat area — matching the clean UX of Messenger.
+ * Intentionally does NOT override colors, fonts, or theme variables.
+ */
+function injectPageInboxDeclutterStyles(): void {
+  if (typeof window !== 'undefined' && window.location) {
+    const pathname = (window.location.pathname || '').toLowerCase();
+    if (pathname.includes('/login') || pathname.includes('/checkpoint') || pathname.includes('loginpage') || pathname.includes('two_step')) {
+      return;
+    }
+  }
+
+  const attach = () => {
+    if (typeof window !== 'undefined' && window.location) {
+      const pathname = (window.location.pathname || '').toLowerCase();
+      if (pathname.includes('/login') || pathname.includes('/checkpoint')) return;
+    }
+    let styleEl = document.getElementById('messenger-desktop-page-declutter-styles') as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'messenger-desktop-page-declutter-styles';
+      (document.head || document.documentElement).appendChild(styleEl);
+    }
+    styleEl.textContent = PAGE_INBOX_DECLUTTER_CSS;
+  };
+
+  attach();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attach);
+  }
+}
+
+if (currentAccount === 'page') {
+  injectPageInboxDeclutterStyles();
 }
 
 /**
@@ -1072,6 +1111,26 @@ function renderPreferencesContent(settings: AppSettings, themes: ThemeDefinition
       </div>
 
       <div class="pref-body">
+        <!-- ABOUT SECTION -->
+        <div>
+          <div class="pref-section-title">
+            <span>ℹ️</span>
+            <span>About</span>
+          </div>
+          <div class="pref-about-card">
+            <div class="pref-about-header">
+              <span class="pref-about-app-name">Messenger Desktop</span>
+              <span class="pref-about-badge">v1.1.1</span>
+            </div>
+            <div class="pref-about-quote">
+              &ldquo;Developed with rage because Meta is BS by Chester Sigua.&rdquo;
+            </div>
+            <div class="pref-about-footer">
+              Open-source Windows desktop client for Messenger
+            </div>
+          </div>
+        </div>
+
         <!-- THEMES SECTION -->
         <div>
           <div class="pref-section-title">
@@ -1319,26 +1378,6 @@ function renderPreferencesContent(settings: AppSettings, themes: ThemeDefinition
             <div class="shortcut-pill">
               <span>Zoom Out</span>
               <span class="shortcut-keys">Ctrl+-</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ABOUT SECTION -->
-        <div>
-          <div class="pref-section-title">
-            <span>ℹ️</span>
-            <span>About</span>
-          </div>
-          <div class="pref-about-card">
-            <div class="pref-about-header">
-              <span class="pref-about-app-name">Messenger Desktop</span>
-              <span class="pref-about-badge">v1.1.1</span>
-            </div>
-            <div class="pref-about-quote">
-              &ldquo;Developed with rage because Meta is BS by Chester Sigua.&rdquo;
-            </div>
-            <div class="pref-about-footer">
-              Open-source Windows desktop client for Messenger
             </div>
           </div>
         </div>
@@ -1679,31 +1718,32 @@ ipcRenderer.on('open-page-chooser', (_event, data?: { isPostLogin?: boolean }) =
 });
 
 function applyDomThemeClasses(isDark: boolean): void {
+  // Strictly ONLY manipulate Messenger-specific theme classes on personal Messenger
+  if (currentAccount !== 'personal') return;
   try {
     document.documentElement.style.setProperty('color-scheme', isDark ? 'dark' : 'light', 'important');
-    // Strictly ONLY manipulate Messenger-specific theme classes on personal Messenger
-    if (currentAccount === 'personal') {
-      if (isDark) {
-        document.documentElement.classList.remove('__fb-light-mode');
-        document.documentElement.classList.add('__fb-dark-mode');
-        if (document.body) {
-          document.body.classList.remove('__fb-light-mode');
-          document.body.classList.add('__fb-dark-mode');
-        }
-      } else {
-        document.documentElement.classList.remove('__fb-dark-mode');
-        document.documentElement.classList.add('__fb-light-mode');
-        if (document.body) {
-          document.body.classList.remove('__fb-dark-mode');
-          document.body.classList.add('__fb-light-mode');
-        }
+    if (isDark) {
+      document.documentElement.classList.remove('__fb-light-mode');
+      document.documentElement.classList.add('__fb-dark-mode');
+      if (document.body) {
+        document.body.classList.remove('__fb-light-mode');
+        document.body.classList.add('__fb-dark-mode');
+      }
+    } else {
+      document.documentElement.classList.remove('__fb-dark-mode');
+      document.documentElement.classList.add('__fb-light-mode');
+      if (document.body) {
+        document.body.classList.remove('__fb-dark-mode');
+        document.body.classList.add('__fb-light-mode');
       }
     }
   } catch {}
 }
 
 ipcRenderer.on('theme-changed', (_event, isDark: boolean) => {
-  applyDomThemeClasses(isDark);
+  if (currentAccount === 'personal') {
+    applyDomThemeClasses(isDark);
+  }
 });
 
 // Update modal controls if settings change externally
@@ -1723,16 +1763,20 @@ window.addEventListener('DOMContentLoaded', () => {
   injectDesktopStyles();
   if (currentAccount === 'personal') {
     ensureSettingsButtonAttached();
+
+    ipcRenderer.invoke('get-settings').then((settings: AppSettings) => {
+      ipcRenderer.invoke('get-themes').then((themes: ThemeDefinition[]) => {
+        const current = themes.find((t) => t.id === settings.theme);
+        if (current) {
+          applyDomThemeClasses(current.category === 'dark');
+        }
+      });
+    });
   }
 
-  ipcRenderer.invoke('get-settings').then((settings: AppSettings) => {
-    ipcRenderer.invoke('get-themes').then((themes: ThemeDefinition[]) => {
-      const current = themes.find((t) => t.id === settings.theme);
-      if (current) {
-        applyDomThemeClasses(current.category === 'dark');
-      }
-    });
-  });
+  if (currentAccount === 'page') {
+    injectPageInboxDeclutterStyles();
+  }
 
   const titleEl = document.querySelector('title');
   if (titleEl) {
