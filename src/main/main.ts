@@ -21,7 +21,8 @@ const TAB_BAR_HEIGHT = 40;
 // Optimize performance and hardware acceleration
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-zero-copy');
-app.commandLine.appendSwitch('ignore-gpu-blocklist');
+// NOTE: ignore-gpu-blocklist is intentionally omitted — it can cause GPU driver
+// crashes that produce a black window on some hardware configurations.
 // Prevent audio interruptions when backgrounded
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 
@@ -53,8 +54,15 @@ if (!gotSingleInstanceLock) {
 }
 
 function getTabBarHtmlPath(): string {
+  // When packaged, assets are extracted to app.asar.unpacked so fs.existsSync
+  // can see them. The asar-internal path (app.getAppPath()) is NOT visible to
+  // the Node fs module, so we check the unpacked copy first.
+  const appPath = app.getAppPath();
+  const unpackedBase = appPath.replace(/\.asar$/, '.asar.unpacked');
+
   const candidates = [
-    path.join(app.getAppPath(), 'assets/tabbar/tabbar.html'),
+    path.join(unpackedBase, 'assets/tabbar/tabbar.html'),
+    path.join(appPath, 'assets/tabbar/tabbar.html'),
     path.join(__dirname, '../../assets/tabbar/tabbar.html'),
     path.join(__dirname, '../tabbar/tabbar.html'),
     path.join(process.cwd(), 'assets/tabbar/tabbar.html')
@@ -68,6 +76,7 @@ function getTabBarHtmlPath(): string {
     } catch {}
   }
 
+  // Last resort: prefer the unpacked path even if existsSync lied
   return candidates[0];
 }
 
@@ -315,6 +324,11 @@ async function initApp(): Promise<void> {
       const views = [tabBarView, personalView, pageView].filter((v): v is WebContentsView => v !== null);
 
       if (partial.theme) {
+        const newTheme = getTheme(partial.theme);
+        const newBg = newTheme.previewColors.bg;
+        tabBarView?.setBackgroundColor(newBg);
+        personalView?.setBackgroundColor(newBg);
+        pageView?.setBackgroundColor(newBg);
         const viewsToTheme = [
           tabBarView ? { webContents: tabBarView.webContents, type: 'tabbar' as const } : null,
           personalView ? { webContents: personalView.webContents, type: 'personal' as const } : null,
@@ -380,6 +394,7 @@ async function initApp(): Promise<void> {
       sandbox: false
     }
   });
+  tabBarView.setBackgroundColor(initialBackgroundColor);
   mainWindow.contentView.addChildView(tabBarView);
 
   personalView = new WebContentsView({
@@ -394,6 +409,7 @@ async function initApp(): Promise<void> {
       additionalArguments: ['--account-type=personal']
     }
   });
+  personalView.setBackgroundColor(initialBackgroundColor);
   mainWindow.contentView.addChildView(personalView);
   setupAuthAndNavigationHandlers(personalView, SESSION_PARTITION, mainWindow);
 
@@ -409,6 +425,7 @@ async function initApp(): Promise<void> {
       additionalArguments: ['--account-type=page']
     }
   });
+  pageView.setBackgroundColor(initialBackgroundColor);
   mainWindow.contentView.addChildView(pageView);
   setupAuthAndNavigationHandlers(pageView, PAGE_SESSION_PARTITION, mainWindow);
 
@@ -504,13 +521,8 @@ async function initApp(): Promise<void> {
     applyTheme(mainWindow, s.theme, viewsToTheme);
   });
 
-  // 3. IMMEDIATELY LAYOUT AND SHOW WINDOW
+  // 3. LAYOUT VIEWS (bounds must be set before content loads)
   updateViewBounds();
-
-  if (!settings.startMinimized) {
-    mainWindow.show();
-    mainWindow.focus();
-  }
 
   const initialViewsToTheme = [
     tabBarView ? { webContents: tabBarView.webContents, type: 'tabbar' as const } : null,
@@ -525,12 +537,32 @@ async function initApp(): Promise<void> {
     console.error('Failed to load tabbar HTML:', err);
   });
 
-  personalView.webContents.loadURL(TARGET_URL).catch((err) => {
-    console.error('Failed to load Messenger personal URL:', err);
-  });
-
   pageView.webContents.loadURL(settings.pageInboxUrl || 'https://business.facebook.com/latest/inbox').catch((err) => {
     console.error('Failed to load Page Inbox URL:', err);
+  });
+
+  // 5. SHOW WINDOW — defer until the personal view has painted at least one frame
+  // to avoid the black-screen flash on cold start (especially in the installed build).
+  if (!settings.startMinimized) {
+    personalView.webContents.once('did-finish-load', () => {
+      if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+
+    // Safety fallback: show after 4 s even if ready-to-show never fires
+    // (e.g. no internet / page error) so the window is never permanently hidden.
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }, 4000);
+  }
+
+  personalView.webContents.loadURL(TARGET_URL).catch((err) => {
+    console.error('Failed to load Messenger personal URL:', err);
   });
 }
 

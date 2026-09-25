@@ -1,0 +1,36 @@
+[13772:0925/194956.457:WARNING:electron\shell\browser\ui\win\notify_icon.cc:60] Unable to create status tray icon.
+[13772:0925/194956.457:WARNING:electron\shell\browser\ui\win\notify_icon.cc:139] Error setting status tray icon image
+[13772:0925/194956.458:WARNING:electron\shell\browser\ui\win\notify_icon.cc:167] Unable to set tooltip for status tray icon
+[13772:0925/194956.460:WARNING:electron\shell\common\keyboard_util.cc:282] Invalid accelerator token: CmdOrControl
+[13772:0925/194956.460:WARNING:electron\shell\common\keyboard_util.cc:282] Invalid accelerator token: CmdOrControl
+[13772:0925/194956.460:WARNING:electron\shell\common\keyboard_util.cc:282] Invalid accelerator token: CmdOrControl
+[13772:0925/194956.460:WARNING:electron\shell\common\keyboard_util.cc:282] Invalid accelerator token: CmdOrControl
+[13772:0925/194956.462:WARNING:electron\shell\common\keyboard_util.cc:282] Invalid accelerator token: CmdOrControl
+[13772:0925/194956.462:WARNING:electron\shell\common\keyboard_util.cc:282] Invalid accelerator token: CmdOrControl
+[13772:0925/194956.462:WARNING:electron\shell\common\keyboard_util.cc:282] Invalid accelerator token: CmdOrControl
+[13772:0925/194956.462:WARNING:electron\shell\common\keyboard_util.cc:282] Invalid accelerator token: CmdOrControl
+[13772:0925/194956.942:INFO:CONSOLE:0] "Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'.", source:  (0)
+[13772:0925/194957.376:INFO:CONSOLE:0] "Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'.", source:  (0)
+[13772:0925/194957.795:INFO:CONSOLE:0] "Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'.", source:  (0)
+[13772:0925/194957.824:INFO:CONSOLE:333] "Permissions policy violation: unload is not allowed in this document.", source: https://static.xx.fbcdn.net/rsrc.php/v4/yQ/r/wRUsk50MHQa.js (333)
+[13772:0925/194959.562:INFO:CONSOLE:252] "
+%cStop! font-family:helvetica; font-size:20px; font-size:50px; font-weight:bold; color:red; -webkit-text-stroke:1px black;", source: https://static.xx.fbcdn.net/rsrc.php/v4/yi/r/uvFYCkp4ZzC.js (252)
+[13772:0925/194959.562:INFO:CONSOLE:252] "
+%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a Facebook feature or "hack" someone's account, it's a scam and will give them access to your Facebook account. font-family:helvetica; font-size:20px; ", source: https://static.xx.fbcdn.net/rsrc.php/v4/yi/r/uvFYCkp4ZzC.js (252)
+[13772:0925/194959.562:INFO:CONSOLE:252] "
+%cSee https://www.facebook.com/selfxss for more information. font-family:helvetica; font-size:20px; ", source: https://static.xx.fbcdn.net/rsrc.php/v4/yi/r/uvFYCkp4ZzC.js (252)
+[13772:0925/194959.562:INFO:CONSOLE:252] "
+%c ", source: https://static.xx.fbcdn.net/rsrc.php/v4/yi/r/uvFYCkp4ZzC.js (252)
+[13772:0925/195000.524:INFO:CONSOLE:3] "
+%cStop! font-family:helvetica; font-size:20px; font-size:50px; font-weight:bold; color:red; -webkit-text-stroke:1px black;", source: https://static.xx.fbcdn.net/rsrc.php/v4iZqH4/yD/l/en_US-j/I3eqcrYWn6NbyLIiCmFIV3o69tCU_ObviwT0svf7S_L3QhP8LreI73rC3bmedlmBpDx1jeg42Yk3AcMAed0NsSFzYVdMW2VmFnG2ftyR7n7PqSlVeMIjRmOKFbrj2-6McrJdBiaOyENsboEG-V49AS1wjs8nnoRn1fd8wvlou45hbVJ4rT_Lm0m_X4Ll3rInjoi_HEC2vad7l1ya3vy8IaPPEdseqZWTT1VmfZKHP8OxG0nUNgvswZVkyqlDLq4Jy_rw7JYb-H-AlWkCwokIlVR68axL-EC5EAkDOTNrYfNassgFjQix3Lyy8XxIfqFTRs7DF0n11r.js (3)
+[13772:0925/195000.524:INFO:CONSOLE:3] "
+%cThis is a browser feature intended for developers. If someone told you to copy-paste something here to enable a Facebook feature or "hack" someone's account, it's a scam and will give them access to your Facebook account. font-family:helvetica; font-size:20px; ", source: https://static.xx.fbcdn.net/rsrc.php/v4iZqH4/yD/l/en_US-j/I3eqcrYWn6NbyLIiCmFIV3o69tCU_ObviwT0svf7S_L3QhP8LreI73rC3bmedlmBpDx1jeg42Yk3AcMAed0NsSFzYVdMW2VmFnG2ftyR7n7PqSlVeMIjRmOKFbrj2-6McrJdBiaOyENsboEG-V49AS1wjs8nnoRn1fd8wvlou45hbVJ4rT_Lm0m_X4Ll3rInjoi_HEC2vad7l1ya3vy8IaPPEdseqZWTT1VmfZKHP8OxG0nUNgvswZVkyqlDLq4Jy_rw7JYb-H-AlWkCwokIlVR68axL-EC5EAkDOTNrYfNassgFjQix3Lyy8XxIfqFTRs7DF0n11r.js (3)
+[13772:0925/195000.524:INFO:CONSOLE:3] "
+%cSee https://www.facebook.com/selfxss for more information. font-family:helvetica; font-size:20px; ", source: https://static.xx.fbcdn.net/rsrc.php/v4iZqH4/yD/l/en_US-j/I3eqcrYWn6NbyLIiCmFIV3o69tCU_ObviwT0svf7S_L3QhP8LreI73rC3bmedlmBpDx1jeg42Yk3AcMAed0NsSFzYVdMW2VmFnG2ftyR7n7PqSlVeMIjRmOKFbrj2-6McrJdBiaOyENsboEG-V49AS1wjs8nnoRn1fd8wvlou45hbVJ4rT_Lm0m_X4Ll3rInjoi_HEC2vad7l1ya3vy8IaPPEdseqZWTT1VmfZKHP8OxG0nUNgvswZVkyqlDLq4Jy_rw7JYb-H-AlWkCwokIlVR68axL-EC5EAkDOTNrYfNassgFjQix3Lyy8XxIfqFTRs7DF0n11r.js (3)
+[13772:0925/195000.525:INFO:CONSOLE:3] "
+%c ", source: https://static.xx.fbcdn.net/rsrc.php/v4iZqH4/yD/l/en_US-j/I3eqcrYWn6NbyLIiCmFIV3o69tCU_ObviwT0svf7S_L3QhP8LreI73rC3bmedlmBpDx1jeg42Yk3AcMAed0NsSFzYVdMW2VmFnG2ftyR7n7PqSlVeMIjRmOKFbrj2-6McrJdBiaOyENsboEG-V49AS1wjs8nnoRn1fd8wvlou45hbVJ4rT_Lm0m_X4Ll3rInjoi_HEC2vad7l1ya3vy8IaPPEdseqZWTT1VmfZKHP8OxG0nUNgvswZVkyqlDLq4Jy_rw7JYb-H-AlWkCwokIlVR68axL-EC5EAkDOTNrYfNassgFjQix3Lyy8XxIfqFTRs7DF0n11r.js (3)
+[13772:0925/195001.115:INFO:CONSOLE:85] "ErrorUtils caught an error:
+
+terminate stream because RemoteTermination with msg : Could not subscribe to xfb_biz_inbox_igd_typing_indicator_subscribe due to an error: Invalid business IGID [Caught in: Subscription error in preprocessResponse]
+
+Subsequent non-fatal errors won't be logged; see https://fburl.com/debugjs. [object Object]", source: https://static.xx.fbcdn.net/rsrc.php/v4/yi/r/uvFYCkp4ZzC.js (85)

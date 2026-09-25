@@ -1,6 +1,7 @@
 appId: com.messenger.desktop
 productName: Messenger
 copyright: Copyright © 2026 Messenger Desktop Contributors
+electronDist: node_modules/electron/dist
 
 directories:
   output: release

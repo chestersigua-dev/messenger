@@ -134,11 +134,14 @@ export function setupAuthAndNavigationHandlers(
       return { action: 'deny' };
     }
 
-    // If it's directly a Messenger conversation navigation (e.g. /t/threadId)
+    // If it's a Messenger conversation link (e.g. /t/threadId), just deny the
+    // window.open — Messenger's React SPA already handles the navigation
+    // internally via history.pushState when the user clicks a chat. Calling
+    // contents.loadURL() here triggers a full page reload, wiping React state,
+    // which caused the "reloads instead of switching chat" bug.
     try {
       const parsed = new URL(url);
       if (parsed.hostname.includes('messenger.com') && (parsed.pathname === '/' || parsed.pathname.startsWith('/t/'))) {
-        contents.loadURL(url);
         return { action: 'deny' };
       }
     } catch {}
@@ -159,7 +162,51 @@ export function setupAuthAndNavigationHandlers(
       shell.openExternal(navigationUrl).catch((err) => {
         console.error('Failed to open external navigation URL:', navigationUrl, err);
       });
+      return;
     }
+
+    // When our window.open handler denies a /t/ request, Messenger's JS receives
+    // null and falls back to `location.href = url`, which fires will-navigate and
+    // causes a full page reload. Intercept that here: use history.pushState +
+    // PopStateEvent to drive Messenger's SPA router client-side instead.
+    // A short fallback forces a real navigation if the SPA doesn't respond.
+    try {
+      const currentUrl = contents.getURL();
+      const parsedCurrent = new URL(currentUrl);
+      const parsedNext = new URL(navigationUrl);
+
+      if (
+        parsedCurrent.hostname.includes('messenger.com') &&
+        parsedNext.hostname.includes('messenger.com') &&
+        parsedNext.pathname.startsWith('/t/')
+      ) {
+        event.preventDefault();
+        const safeUrl = JSON.stringify(navigationUrl);
+        contents.executeJavaScript(`
+          (function() {
+            var url = ${safeUrl};
+            try {
+              window.history.pushState(null, '', url);
+              window.dispatchEvent(new PopStateEvent('popstate', {
+                bubbles: false,
+                cancelable: false,
+                state: window.history.state
+              }));
+              // Fallback: if the SPA router didn't navigate (content unchanged)
+              // after 1.5 s, do a real navigation so the user lands on the chat.
+              setTimeout(function() {
+                var el = document.querySelector('[data-pagelet="MWThreadlist"], [role="main"]');
+                if (el && window.location.pathname !== new URL(url).pathname) {
+                  window.location.href = url;
+                }
+              }, 1500);
+            } catch(e) {
+              window.location.href = url;
+            }
+          })();
+        `).catch(() => {});
+      }
+    } catch {}
   });
 
   // 3. Intercept redirect chains

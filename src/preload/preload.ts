@@ -1332,7 +1332,7 @@ function renderPreferencesContent(settings: AppSettings, themes: ThemeDefinition
           <div class="pref-about-card">
             <div class="pref-about-header">
               <span class="pref-about-app-name">Messenger Desktop</span>
-              <span class="pref-about-badge">v1.1.0</span>
+              <span class="pref-about-badge">v1.1.1</span>
             </div>
             <div class="pref-about-quote">
               &ldquo;Developed with rage because Meta is BS by Chester Sigua.&rdquo;
